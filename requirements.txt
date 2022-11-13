@@ -1,0 +1,7 @@
+pandas
+joblib
+spotipy
+selenium
+python-dotenv
+argparse
+typer
