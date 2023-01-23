@@ -7,7 +7,7 @@ app = typer.Typer()
 
 DRIVER_PATH = './chromedriver'
 SCOPE = "user-read-recently-played"
-SPOTIFY_DOWNLOADER_WEBSITE = 'https://spotify-downloader.com/'
+SPOTIFY_DOWNLOADER_WEBSITE =  'https://www.soundloaders.com/spotify-downloader/'
 
 
 

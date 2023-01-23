@@ -12,23 +12,19 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from spotipy.oauth2 import SpotifyOAuth
+from utils import download_file
 
 
 options = webdriver.ChromeOptions()
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36")
 WINDOW_SIZE = "920,800"
 options.add_argument("--headless")
-options.add_argument("--window-size=%s" % WINDOW_SIZE)
+# options.add_argument("--window-size=%s" % WINDOW_SIZE)
 options.add_argument("--mute-audio")
 
-spotify_downloader_website = 'https://spotify-downloader.com/'
+spotify_downloader_website = 'https://www.soundloaders.com/spotify-downloader/'
 
-def check_exists_by_xpath(driver, xpath):
-    try:
-        driver.find_element(By.XPATH, xpath)
-    except NoSuchElementException:
-        return False
-    return True
+
 
 
 class MusicDownloader:
@@ -89,6 +85,7 @@ class MusicDownloader:
             summary.to_csv(os.path.join(self.dir, 'summary_file.csv'), index=False)
         return summary
 
+
     def _create_dir(self, url):
         results = self.sp.playlist(url)
 
@@ -100,59 +97,42 @@ class MusicDownloader:
             os.makedirs(path)
         self.dir = path
 
+
     def _connect_driver(self):
         driver = webdriver.Chrome(self.driver_path, chrome_options=self.options)
         return driver
 
-    def download_song(self, url):
+
+    @staticmethod
+    def check_exists_by_xpath(driver, xpath):
         try:
-            driver = self._connect_driver()
-            driver.get(self.spotify_downloader_website)
-            time.sleep(2)  
-            search_bar = driver.find_element(By.XPATH, '//*[@id="link"]')
-            search_bar.clear()
-            search_bar.send_keys(url)
-            time.sleep(1)
-            submit_button = driver.find_element(By.XPATH, '//*[@id="submit"]')
-            submit_button.click()
-            delay = 30 # seconds
-            try:
-                myElem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="result"]/article/footer/button')))
-            except TimeoutException:
-                pass
+            driver.find_element(By.XPATH, xpath)
+        except NoSuchElementException:
+            return False
+        return True
 
-            download_button = driver.find_element(By.XPATH, '//*[@id="result"]/article/footer/button')
-            download_button.click()
-            while 'save' not in driver.find_element(By.XPATH, '//*[@id="result"]/article/footer/button').text.lower()  :
-                time.sleep(2)
-            time.sleep(1)    
-            download_button.click()
-            verification_button = driver.find_element(By.XPATH,  '//*[@id="startVerification"]')
-            time.sleep(0.5)
-            verification_button.click()
-            time.sleep(20)
 
-            p = driver.current_window_handle
-            chwd = driver.window_handles
-            for w in chwd:
-                #switch focus to child window
-                if(w!=p):
-                    driver.switch_to.window(w)
-            time.sleep(5)   
-            if check_exists_by_xpath(driver, '//*[@id="cmpbox"]'):
-                driver.find_element(By.XPATH, '//*[@id="cmpwelcomebtnyes"]/a').click()
-            time.sleep(20)
-
-            try:
-                verify_button = driver.find_element(By.XPATH, '/html/body/div[2]/div[2]')
-            except:
-                verify_button = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]')
-            verify_button.click()
-
-            time.sleep(60)
+    def download_song(self, url):
+        driver = self._connect_driver()
+        driver.get(self.spotify_downloader_website)
+        driver = webdriver.Chrome('chromedriver.exe')
+        driver.get(spotify_downloader_website)
+        time.sleep(2)
+        search_bar = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/form/input')
+        search_bar.clear()
+        search_bar.send_keys(url)
+        search_bar.send_keys(Keys.ENTER)
+        time.sleep(2)
+        download_button = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/div/div/div[2]/button')
+        download_button.click()
+        time.sleep(3)
+        loader_xpath = '//*[@id="__next"]/main/div/div[1]/div[1]/div[2]/div/div'
+        try:
+            element = WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, loader_xpath)))
+            element = WebDriverWait(driver, 10*60).until_not( EC.presence_of_element_located((By.XPATH, loader_xpath)))
+            time.sleep(2)
+        finally:
             driver.quit()
-        except:
-            print('Error:', url)
 
 
     def download_playlist(self, url):
