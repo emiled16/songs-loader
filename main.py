@@ -29,7 +29,7 @@ def hello(
 
     downloader.download_playlist(playlist_url)
 
-    print('='*50)
+    print('='*100)
     print('DONE')
 
 

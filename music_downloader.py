@@ -19,7 +19,7 @@ options = webdriver.ChromeOptions()
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36")
 WINDOW_SIZE = "920,800"
 options.add_argument("--headless")
-# options.add_argument("--window-size=%s" % WINDOW_SIZE)
+options.add_argument("--window-size=%s" % WINDOW_SIZE)
 options.add_argument("--mute-audio")
 
 spotify_downloader_website = 'https://www.soundloaders.com/spotify-downloader/'
@@ -74,7 +74,7 @@ class MusicDownloader:
             urls.append(url)
 
             print(artist, " – ", name, " – ", url)
-
+        print("="* 100)
         summary = pd.DataFrame(
             {
                 "name": names,
@@ -99,6 +99,7 @@ class MusicDownloader:
 
 
     def _connect_driver(self):
+        print(self.dir)
         driver = webdriver.Chrome(self.driver_path, chrome_options=self.options)
         return driver
 
@@ -113,35 +114,40 @@ class MusicDownloader:
 
 
     def download_song(self, url):
-        driver = self._connect_driver()
-        driver.get(self.spotify_downloader_website)
-        driver = webdriver.Chrome('chromedriver.exe')
-        driver.get(spotify_downloader_website)
-        time.sleep(2)
-        search_bar = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/form/input')
-        search_bar.clear()
-        search_bar.send_keys(url)
-        search_bar.send_keys(Keys.ENTER)
-        time.sleep(2)
-        download_button = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/div/div/div[2]/button')
-        download_button.click()
-        time.sleep(3)
-        loader_xpath = '//*[@id="__next"]/main/div/div[1]/div[1]/div[2]/div/div'
+
         try:
-            element = WebDriverWait(driver, 10).until( EC.presence_of_element_located((By.XPATH, loader_xpath)))
-            element = WebDriverWait(driver, 10*60).until_not( EC.presence_of_element_located((By.XPATH, loader_xpath)))
+            driver = self._connect_driver()
+            driver.get(self.spotify_downloader_website)
             time.sleep(2)
-        finally:
-            driver.quit()
+            search_bar = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/form/input')
+            search_bar.clear()
+            search_bar.send_keys(url)
+            search_bar.send_keys(Keys.ENTER)
+            time.sleep(2)
+            download_button = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/div/div/div[2]/button')
+            download_button.click()
+            time.sleep(3)
+
+            download_window = '//*[@id="__next"]/main/div/div[1]/div[1]/div[2]/div/div'
+            try:
+                element = WebDriverWait(driver, 5*60).until_not( EC.presence_of_element_located((By.XPATH, download_window)))
+                time.sleep(2)
+            finally:
+                driver.quit()
+        except:
+            print(f'Error with {url}')
 
 
     def download_playlist(self, url):
         self._create_dir(url)
-        prefs = {"download.default_directory" : self.dir}
+        prefs = {
+            "download.default_directory" : self.dir,
+            "savefile.default_directory": self.dir,}
         self.options.add_experimental_option("prefs", prefs)
+        self.options.add_experimental_option('excludeSwitches', ['enable-logging'])
         self.process_playlist(url)
         playlist_csv = pd.read_csv(os.path.join( self.dir, 'summary_file.csv'))
         playlist_csv['status'] = 'To Be Completed'
 
-        Parallel(n_jobs=8)(delayed(self.download_song)(url) 
+        Parallel(n_jobs=15)(delayed(self.download_song)(url) 
                         for url in playlist_csv['url'] )
