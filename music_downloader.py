@@ -119,18 +119,18 @@ class MusicDownloader:
             driver = self._connect_driver()
             driver.get(self.spotify_downloader_website)
             time.sleep(2)
-            search_bar = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/form/input')
+            search_bar = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/form/input')
             search_bar.clear()
             search_bar.send_keys(url)
             search_bar.send_keys(Keys.ENTER)
             time.sleep(2)
-            download_button = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[1]/div/div/div[2]/button')
+            download_button = driver.find_element(By.XPATH, '//*[@id="__next"]/main/div/div[1]/div[3]/div/div[2]/button')
             download_button.click()
             time.sleep(3)
 
-            download_window = '//*[@id="__next"]/main/div/div[1]/div[1]/div[2]/div/div'
+            download_window = '//*[@id="__next"]/main/div/div[1]/div[5]/div/div'
             try:
-                element = WebDriverWait(driver, 5*60).until_not( EC.presence_of_element_located((By.XPATH, download_window)))
+                element = WebDriverWait(driver, 10*60).until_not( EC.presence_of_element_located((By.XPATH, download_window)))
                 time.sleep(2)
             finally:
                 driver.quit()
